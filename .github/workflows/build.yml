@@ -31,6 +31,10 @@ jobs:
         with: { xmake-version: "2.9.9" }
       - uses: nttld/setup-ndk@v1
         with: { ndk-version: r28c, link-to-sdk: true }
+      - name: Build Discord stub
+        working-directory: src_project/PojarustLauncher
+        run: |
+          $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android28-clang -shared -fPIC -O1 -Wl,-soname,libdiscord_partner_sdk.so -o app/src/main/jniLibs/arm64-v8a/libdiscord_partner_sdk.so tools/discord_stub.c
       - name: Build
         working-directory: src_project/PojarustLauncher
         run: |
