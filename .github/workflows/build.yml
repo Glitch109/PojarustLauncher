@@ -20,22 +20,16 @@ jobs:
           echo "Using $ZIP"
           mkdir -p work
           unzip -q "$ZIP" -d work
-          GRADLEW=$(find work -name gradlew -not -path "*/node_modules/*" | head -n 1)
-          PROJECT=$(dirname "$GRADLEW")
-          echo "PROJECT=$PROJECT" >> $GITHUB_ENV
+          GRADLEW=$(find work -name gradlew | head -n 1)
+          echo "PROJECT=$(dirname "$GRADLEW")" >> $GITHUB_ENV
 
       - name: Build
         working-directory: ${{ env.PROJECT }}
         run: |
           chmod +x ./gradlew
-          ./gradlew build --stacktrace --console=plain 2>&1 | tee build-log.txt
-          exit ${PIPESTATUS[0]}
-
-      - name: Collect errors
-        if: failure()
-        working-directory: ${{ env.PROJECT }}
-        run: |
-          grep -E "error:|FAILED|What went wrong" -A2 build-log.txt | head -2000 > build-errors.txt || true
+          ./gradlew build --console=plain > build-log.txt 2>&1 || echo "FAILED" > failed.flag
+          grep -nE "error:|What went wrong|Could not|Execution failed|^> " -A3 build-log.txt | head -150
+          [ ! -f failed.flag ]
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -44,5 +38,4 @@ jobs:
           path: |
             ${{ env.PROJECT }}/build/libs/*.jar
             ${{ env.PROJECT }}/build-log.txt
-            ${{ env.PROJECT }}/build-errors.txt
           if-no-files-found: ignore
